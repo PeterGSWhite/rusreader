@@ -26,6 +26,8 @@ const App = () => {
   const [sectionno, setSectionno] = useState('0')
   const [fontSize, setFontSize] = useState(24)
   const [pixelWidth, setPixelWidth] = useState(14.40)
+  const [wordSpacing, setWordSpacing] = useState(5)
+  
   const [html, setHtml] = useState(`
   <p>calibrating 1 2 3 ! " £ -</p>
   <p>CALIBRATING 1 2 3 ! " £ -</p>
@@ -35,12 +37,11 @@ const App = () => {
   const [styles, setStyles] = useState(`
     .perf {background-color:rgba(28, 28, 108, 0.4);}
     .imperf {background-color:blue;}
-    p {font-family: 'Droid Sans Mono', 'Courier New';font-size: ${fontSize}px; margin:8;}
+    p {font-family: 'Droid Sans Mono', word-spacing: ${wordSpacing}px; 'Courier New';font-size: ${fontSize}px; margin:8;}
   `)
   6
   return (
     <SafeAreaView style={{flex: 1, margin:8}}>
-      <Text>{pixelWidth}</Text>
       <MyWeb
       section={html}
       styles={styles}
