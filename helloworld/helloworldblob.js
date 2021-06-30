@@ -7,7 +7,7 @@
  */
 
  import React from 'react';
- import MyWeb from './MyWeb'
+ import MyWeb from '../MyWeb'
  import RNFetchBlob from 'rn-fetch-blob'
  const dirs = RNFetchBlob.fs.dirs
  // import { WebView } from 'react-native-webview';
