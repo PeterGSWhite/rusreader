@@ -1,106 +1,59 @@
 import React from 'react';
-import { SafeAreaView, View, FlatList, StyleSheet, Text, StatusBar } from 'react-native';
+import { View, FlatList, StyleSheet, StatusBar, TouchableOpacity, Text } from 'react-native';
 import CoverInfo from './CoverInfo';
+import DocumentPicker from 'react-native-document-picker';
+import { useSelector, useDispatch } from 'react-redux' 
+import { DrawerContentScrollView } from '@react-navigation/drawer';
 
-const DATA = {
-  'bd7acbea-c1b1-46c2-aed5-3ad53abb28ba': {
-      id: 'bd7acbea-c1b1-46c2-aed5-3ad53abb28ba',
-      title: 'филосовский камень',
-      author: 'дж к роалинг',
-      currentPage: 403,
-      totalPages: 403
-    },
-    '3ac68afc-c605-48d3-a4f8-fbd91aa097f63': {
-      id: '3ac68afc-c605-48d3-a4f8-fbd91aa97f63',
-      title: 'орден феникса',
-      author: 'дж к роалинг',
-      currentPage: 42,
-      totalPages: 508
-    },
-    '58694a0f-3d8a1-471f-bd96-145571e29d72': {
-      id: '58694a0f-3da1-471f-bd96-145571e29d72',
-      title: 'кубок онгня',
-      author: 'дж к роалинг',
-      currentPage: 0,
-      totalPages: 507
-    },
-    'bd7acbea-c1b1-46c2-aed5-3ad53a7bb28ba': {
-        id: 'bd7acbea-c1b1-46c2-aed5-3ad53abb28ba',
-        title: 'филосовский камень',
-        author: 'дж к роалинг',
-        currentPage: 403,
-        totalPages: 403
-      },
-      '3ac68afc-c605-48d36-a4f8-fbd91aa97f63': {
-        id: '3ac68afc-c605-48d3-a4f8-fbd91aa97f63',
-        title: 'орден феникса',
-        author: 'дж к роалинг',
-        currentPage: 42,
-        totalPages: 508
-      },
-      '58694a0f-36da1-471f-bd96-145571e29d72': {
-        id: '58694a0f-3da1-471f-bd96-145571e29d72',
-        title: 'кубок онгня',
-        author: 'дж к роалинг',
-        currentPage: 0,
-        totalPages: 507
-      },
-      'bd7acbea-c1b1-46c2-aed65-3ad53abb28ba': {
-        id: 'bd7acbea-c1b1-46c2-aed5-3ad53abb28ba',
-        title: 'филосовский камень',
-        author: 'дж к роалинг',
-        currentPage: 403,
-        totalPages: 403
-      },
-      '3ac68afc-c605-48d3-6a4f8-fbd91aa97f63': {
-        id: '3ac68afc-c605-48d3-a4f8-fbd91aa97f63',
-        title: 'орден феникса',
-        author: 'дж к роалинг',
-        currentPage: 42,
-        totalPages: 508
-      },
-      '58694a0f-3da1-471f-bd96-1456571e29d72': {
-        id: '58694a0f-3da1-471f-bd96-145571e29d72',
-        title: 'кубок онгня',
-        author: 'дж к роалинг',
-        currentPage: 0,
-        totalPages: 507
-      },
-      'bd7acbea-c1b1-46c62-aed5-3ad53abb28ba': {
-        id: 'bd7acbea-c1b1-46c2-aed5-3ad53abb28ba',
-        title: 'филосовский камень',
-        author: 'дж к роалинг',
-        currentPage: 403,
-        totalPages: 403
-      },
-      '3ac68afc-c605-48d63-a4f8-fbd91aa97f63': {
-        id: '3ac68afc-c605-48d3-a4f8-fbd91aa97f63',
-        title: 'орден феникса',
-        author: 'дж к роалинг',
-        currentPage: 42,
-        totalPages: 508
-      },
-      '58694a0f-3da1-471f-6bd96-145571e29d72': {
-        id: '58694a0f-3da1-471f-bd96-145571e29d72',
-        title: 'кубок онгня',
-        author: 'дж к роалинг',
-        currentPage: 0,
-        totalPages: 507
-      },
+const Library = ({navigation}) => {
+  const dispatch = useDispatch()
+  const books = useSelector(state => state.books)
+  console.log(books)
+
+  const openBookFile = async () => {
+    console.log('oi')
+    dispatch({type: 'books/bookAdded', payload: {title:'oi', author:'me', totalPages:131}})
+    // try {
+    //   const res = await DocumentPicker.pick({
+    //     type: [DocumentPicker.types.allFiles],
+    //   });
+    //   console.log(
+    //     res.uri,
+    //     res.type, // mime type
+    //     res.name,
+    //     res.size
+    //   );
+    //   // Instantiate new book here and redirect
+    // } catch (err) {
+    //   if (DocumentPicker.isCancel(err)) {
+    //     // User cancelled the picker, exit any dialogs or menus and move on
+    //   } else {
+    //     throw err;
+    //   }
+    // }
   }
 
-const Library = () => {
-  const renderItem = ({ item }) => (
-    <CoverInfo style={styles.cover} info={DATA[item]} />
-  );
+  // Render books
+  const renderBook = book => (
+    <CoverInfo 
+      key={book.id}
+      book={book}
+      navigation={navigation}
+    />
+  )
 
   return (
       <View style={styles.container}>
-            
+            <TouchableOpacity
+             onPress={openBookFile}
+             style={styles.cover}>
+              <Text style={{}}>➕</Text>
+              <Text>Add Book</Text>
+            </TouchableOpacity>
             <FlatList
-                data={Object.keys(DATA)}
-                renderItem={renderItem}
-                keyExtractor={item => item}
+                data={books}
+                renderItem={renderBook}
+                keyExtractor={item => item.id}
             />
         </View>
   );
@@ -111,7 +64,7 @@ const styles = StyleSheet.create({
     marginTop: StatusBar.currentHeight || 0,
   },
   cover: {
-    backgroundColor: '#f9c2ff',
+    backgroundColor: 'grey',
     padding: 20,
     marginVertical: 8,
     marginHorizontal: 16,

@@ -1,9 +1,11 @@
 import React from "react";
-import { View, Text, Image } from "react-native";
+import { View, Text, Image, TouchableOpacity } from "react-native";
+import { useSelector } from 'react-redux'
 
-const CoverInfo = ({info}) => {
+const CoverInfo = ({navigation, book}) => {
+  console.log(book)
   return (
-    <View
+    <TouchableOpacity
       style={{
         flexDirection: "row",
         height: 100,
@@ -12,6 +14,9 @@ const CoverInfo = ({info}) => {
         marginHorizontal: 20,
         backgroundColor: 'grey'
       }}
+      onPress={() =>
+        navigation.navigate('Test', { book })
+      }
     >
       <View style={{ flex: 0.3 }} >
         <Image
@@ -19,12 +24,12 @@ const CoverInfo = ({info}) => {
         />
       </View>
       <View style={{flex: 0.7 }} >
-          <Text>{info.title}</Text>
-          <Text>{info.author}</Text>
-          <Text>{info.currentPage}</Text>
-          <Text>{info.totalPages}</Text>
+          <Text>{book.item.title}</Text>
+          <Text>{book.item.author}</Text>
+          <Text>{book.item.currentPage}</Text>
+          <Text>{book.item.totalPages}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
