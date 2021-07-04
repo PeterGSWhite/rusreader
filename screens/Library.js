@@ -1,37 +1,51 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, FlatList, StyleSheet, StatusBar, TouchableOpacity, Text } from 'react-native';
 import CoverInfo from './CoverInfo';
 import DocumentPicker from 'react-native-document-picker';
 import { useSelector, useDispatch } from 'react-redux' 
+import { nanoid } from '@reduxjs/toolkit'
 import { DrawerContentScrollView } from '@react-navigation/drawer';
+import processNewBook from '../cachingFunctions/processNewBook'
 
 const Library = ({navigation}) => {
   const dispatch = useDispatch()
   const books = useSelector(state => state.books)
-  console.log(books)
+  
+  const [loadingBook, setLoadingBook] = useState(false)
 
   const openBookFile = async () => {
-    console.log('oi')
-    dispatch({type: 'books/bookAdded', payload: {title:'oi', author:'me', totalPages:131}})
-    // try {
-    //   const res = await DocumentPicker.pick({
-    //     type: [DocumentPicker.types.allFiles],
-    //   });
-    //   console.log(
-    //     res.uri,
-    //     res.type, // mime type
-    //     res.name,
-    //     res.size
-    //   );
-    //   // Instantiate new book here and redirect
-    // } catch (err) {
-    //   if (DocumentPicker.isCancel(err)) {
-    //     // User cancelled the picker, exit any dialogs or menus and move on
-    //   } else {
-    //     throw err;
-    //   }
-    // }
-  }
+    setLoadingBook(true)
+    try {
+      const res = await DocumentPicker.pick({
+        type: [DocumentPicker.types.allFiles],
+      });
+      console.log(
+        res.uri,
+        res.type, // mime type
+        res.name,
+        res.size
+      );
+      let id = nanoid()
+      let book = await processNewBook(id, res.uri)
+      console.log('booky wooky', book)
+      dispatch({type: 'books/bookAdded', payload: {
+        id: id,
+        title: book.title,
+        author: book.author,
+        totalPages:book.totalPages,
+        // coverArt
+      }}) 
+      // Instantiate new book here and redirect
+    } catch (err) {
+      if (DocumentPicker.isCancel(err)) {
+        // User cancelled the picker, exit any dialogs or menus and move on
+      } else {
+        throw err;
+      }
+    } finally {
+      setLoadingBook(false)
+    }
+  }  
 
   // Render books
   const renderBook = book => (
@@ -47,8 +61,8 @@ const Library = ({navigation}) => {
             <TouchableOpacity
              onPress={openBookFile}
              style={styles.cover}>
-              <Text style={{}}>➕</Text>
-              <Text>Add Book</Text>
+              <Text style={{}}>{loadingBook ? '...' : '➕'}</Text>
+              <Text>{loadingBook ? 'Processing book' : 'Add Book'}</Text>
             </TouchableOpacity>
             <FlatList
                 data={books}

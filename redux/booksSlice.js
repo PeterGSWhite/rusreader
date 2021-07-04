@@ -24,18 +24,8 @@ const booksSlice = createSlice({
   reducers: {
     bookAdded: {
       reducer(state, action) {
+        action.payload.currentPage = 0
         state.push(action.payload)
-      },
-      prepare(title, author, totalPages) {
-        return {
-          payload: {
-            id: nanoid(),
-            title,
-            author,
-            currentPage: 0,
-            totalPages,
-          }
-        }
       }
     }
   }

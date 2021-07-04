@@ -3,7 +3,7 @@ import { View, Text, Image, TouchableOpacity } from "react-native";
 import { useSelector } from 'react-redux'
 
 const CoverInfo = ({navigation, book}) => {
-  console.log(book)
+  console.log('coverinfo', book)
   return (
     <TouchableOpacity
       style={{
@@ -15,7 +15,7 @@ const CoverInfo = ({navigation, book}) => {
         backgroundColor: 'grey'
       }}
       onPress={() =>
-        navigation.navigate('Test', { book })
+        navigation.navigate('Test', book.item)
       }
     >
       <View style={{ flex: 0.3 }} >
