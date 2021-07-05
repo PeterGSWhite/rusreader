@@ -2,15 +2,19 @@ import React, { useState } from 'react';
 import { View, FlatList, StyleSheet, StatusBar, TouchableOpacity, Text } from 'react-native';
 import CoverInfo from './CoverInfo';
 import DocumentPicker from 'react-native-document-picker';
-import { useSelector, useDispatch } from 'react-redux' 
+import { useSelector, useDispatch } from 'react-redux'
+import {
+  addBook,
+  selectAllBooks
+} from '../redux/booksSlice'
 import { nanoid } from '@reduxjs/toolkit'
 import { DrawerContentScrollView } from '@react-navigation/drawer';
 import processNewBook from '../cachingFunctions/processNewBook'
 
 const Library = ({navigation}) => {
   const dispatch = useDispatch()
-  const books = useSelector(state => state.books)
-  
+  const books = useSelector(selectAllBooks)
+  console.log('boooooks', books)
   const [loadingBook, setLoadingBook] = useState(false)
 
   const openBookFile = async () => {
@@ -28,13 +32,13 @@ const Library = ({navigation}) => {
       let id = nanoid()
       let book = await processNewBook(id, res.uri)
       console.log('booky wooky', book)
-      dispatch({type: 'books/bookAdded', payload: {
-        id: id,
+      dispatch(addBook({
+        cacheDir: id,
         title: book.title,
         author: book.author,
         totalPages:book.totalPages,
         // coverArt
-      }}) 
+      })) 
       // Instantiate new book here and redirect
     } catch (err) {
       if (DocumentPicker.isCancel(err)) {

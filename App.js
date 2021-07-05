@@ -3,7 +3,7 @@ import { SafeAreaView, View, FlatList, StyleSheet, Text, StatusBar } from 'react
 import Library from './screens/Library';
 
 import { Provider } from 'react-redux'
-import Test from './screens/Test';
+import PageContainer from './screens/PageContainer';
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
@@ -24,7 +24,7 @@ function MyDrawer() {
   return (
     <Drawer.Navigator>
       <Drawer.Screen name="Library" component={Library} />
-      <Drawer.Screen name="Test" component={Test} />
+      <Drawer.Screen name="PageContainer" component={PageContainer} />
     </Drawer.Navigator>
   );
 }

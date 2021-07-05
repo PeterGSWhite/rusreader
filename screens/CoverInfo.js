@@ -15,7 +15,7 @@ const CoverInfo = ({navigation, book}) => {
         backgroundColor: 'grey'
       }}
       onPress={() =>
-        navigation.navigate('Test', book.item)
+        navigation.navigate('PageContainer', book.item)
       }
     >
       <View style={{ flex: 0.3 }} >

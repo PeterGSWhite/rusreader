@@ -1,7 +1,7 @@
 import RNFetchBlob from 'rn-fetch-blob'
 const dirs = RNFetchBlob.fs.dirs
 
-const processNewBook = async (id, uri) => {
+const processNewBook = async (cacheDir, uri) => {
     // return new Promise(function(resolve, reject) {
         let pages = 0
         let book
@@ -12,7 +12,7 @@ const processNewBook = async (id, uri) => {
         // .then((data) => {
         console.log(typeof(data))
         let sections = data.split("<section")
-        sections.forEach((section, i) => {
+        for ( const [i, section] of sections.entries()) {
             if(i == 0) {
                 console.log(section)
                 book = parseCoverInfo(section)
@@ -20,15 +20,13 @@ const processNewBook = async (id, uri) => {
             else {
                 sectionPages = 0
                 for(let i = 0; i < section.length; i += 1000) {
-                    sectionPages += 1
                     let stop = Math.min(i+1000, section.length)
-                    cacheSection(id, pages+sectionPages, section.slice(i, stop)).then(() => {
-
-                    })
+                    await cacheSection(cacheDir, pages+sectionPages, section.slice(i, stop))
+                    sectionPages += 1
                 }
                 pages += sectionPages
             }
-        })
+        }
         book.totalPages = pages
         console.log('got here', book)
         return book
@@ -47,8 +45,8 @@ const parseCoverInfo = (section) => {
     return book
 }
 
-const cacheSection = async (id, page, section) => {
-    let chunk_path = dirs.CacheDir + id + '_' + page + '.txt'
+const cacheSection = async (cacheDir, page, section) => {
+    let chunk_path = dirs.CacheDir  + '/' +  cacheDir + '_' + page + '.txt'
     await RNFetchBlob.fs.writeFile(chunk_path, section, 'utf8')
 }
 

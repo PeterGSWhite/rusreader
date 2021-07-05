@@ -2,8 +2,8 @@ import React, {useState, useEffect} from 'react';
 import { View, Text } from 'react-native';
 import RNFetchBlob from 'rn-fetch-blob'
 const dirs = RNFetchBlob.fs.dirs
-const Test = ({route}) => {
-
+const PageContent = ({route}) => {
+    
     const [pageContent, setPageContent] = useState('empty')
 
     const readchunkfoo = (id, page) => {
@@ -22,4 +22,4 @@ const Test = ({route}) => {
     )
 }
 
-export default Test
+export default PageContent
