@@ -8,6 +8,9 @@ import {
 import GestureRecognizer, {swipeDirections} from 'react-native-swipe-gestures';
 import RNFetchBlob from 'rn-fetch-blob'
 const dirs = RNFetchBlob.fs.dirs
+
+import PageContent from './PageContent'
+
 const PageContainer = ({route}) => {
     console.log('id in pagecontainer', route.params.id)
     const book = useSelector(state => selectBookById(state, route.params.id))
@@ -49,8 +52,11 @@ const PageContainer = ({route}) => {
         <GestureRecognizer
             onSwipeLeft={(state) => onSwipeLeft(state)}
             onSwipeRight={(state) => onSwipeRight(state)}
-        >
-            <Text>{pageContent}</Text>
+            style= {{flex: 1}}
+        >   
+            <PageContent
+                pageContent = {pageContent}
+            />
         </GestureRecognizer>  
             
     )

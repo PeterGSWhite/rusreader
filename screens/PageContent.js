@@ -1,25 +1,35 @@
-import React, {useState, useEffect} from 'react';
-import { View, Text } from 'react-native';
-import RNFetchBlob from 'rn-fetch-blob'
-const dirs = RNFetchBlob.fs.dirs
-const PageContent = ({route}) => {
-    
-    const [pageContent, setPageContent] = useState('empty')
+import React from 'react';
+import { WebView } from 'react-native-webview';
+import { useSelector } from 'react-redux' 
 
-    const readchunkfoo = (id, page) => {
-        console.log(route.params)
-        let chunk_path = dirs.CacheDir + id + '_' + page + '.txt'
-        RNFetchBlob.fs.readFile(chunk_path, 'utf8')
-           .then((data) => {
-             setPageContent(data)
-           })
-      }
-    useEffect(() => readchunkfoo(route.params.id, 19), [])
+const PageContent = ({pageContent}) => {
+    
+    const settings = useSelector(state => state.settings)
+
+    const styles = `<style>
+        p {
+            font-size: ${settings.fontSize}px;
+            word-spacing: ${settings.wordSpacing}px;
+            margin: ${settings.lineSpacing}px;
+        }
+        .page-container {
+            margin-left: ${settings.pageMarginHorizontal}px;
+            margin-right: ${settings.pageMarginHorizontal}px;
+            margin-top: ${settings.pageMarginVertical}px;
+            margin-bottom: ${settings.pageMarginVertical}px;
+            word-break: break-all;
+        }
+    </style>`
+
+    const html = `<html><head>${styles}</head><body><div class="page-container">${pageContent}</div></body></html>`
+
     return (
-        <View>
-            <Text>{pageContent}</Text>
-        </View>
-    )
+        <WebView
+          originWhitelist={['*']}
+          source={{ html: html }} 
+          scalesPageToFit={false}
+        />
+    );
 }
 
 export default PageContent

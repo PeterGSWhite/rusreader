@@ -35,6 +35,14 @@ const Settings = ({navigation}) => {
             value={settings.wordSpacing.toString()}
             keyboardType="numeric"
         />
+        <Text style={styles.label}>Line Spacing</Text>
+        <TextInput
+            style={styles.input}
+            label="Line Spacing"
+            onChangeText={(s) => {dispatch({type: 'settings/edit', payload: {lineSpacing: s}})}}
+            value={settings.lineSpacing.toString()}
+            keyboardType="numeric"
+        />
         <Text style={styles.label}>Horizontal Margin</Text>
         <TextInput
             style={styles.input}

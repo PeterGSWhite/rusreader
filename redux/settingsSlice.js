@@ -8,7 +8,8 @@ export const settingsSlice = createSlice({
       wordSpacing: 0,
       realWordSpacing: 5.46,
       pageMarginHorizontal: 10,
-      pageMarginVertical: 10
+      pageMarginVertical: 10,
+      lineSpacing: 0,
     },
     reducers: {
       edit: (state, action) => {
