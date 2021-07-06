@@ -1,38 +1,37 @@
+import { View, StyleSheet, Text, useWindowDimensions } from "react-native";
+
+
+import store from '../redux/store'
+
 import RNFetchBlob from 'rn-fetch-blob'
 const dirs = RNFetchBlob.fs.dirs
-
 const processNewBook = async (cacheDir, uri) => {
-    // return new Promise(function(resolve, reject) {
-        let pages = 0
-        let book
-        // Get Cover info
-        console.log('entry to pronebo')
-        // Chunk it up
-        let data = await RNFetchBlob.fs.readFile(uri, "text/xml")
-        // .then((data) => {
-        console.log(typeof(data))
-        let sections = data.split("<section")
-        for ( const [i, section] of sections.entries()) {
-            if(i == 0) {
-                console.log(section)
-                book = parseCoverInfo(section)
-            }
-            else {
-                sectionPages = 0
-                for(let i = 0; i < section.length; i += 1000) {
-                    let stop = Math.min(i+1000, section.length)
-                    await cacheSection(cacheDir, pages+sectionPages, section.slice(i, stop))
-                    sectionPages += 1
-                }
-                pages += sectionPages
-            }
+    const settings = store.getState().settings
+    console.log(settings)
+    let pages = 0
+    let book
+    // Get Cover info
+
+    // Chunk it up
+    let data = await RNFetchBlob.fs.readFile(uri, "text/xml")
+    let sections = data.split("<section")
+    for ( const [i, section] of sections.entries()) {
+        if(i == 0) {
+            console.log(section)
+            book = parseCoverInfo(section)
         }
-        book.totalPages = pages
-        console.log('got here', book)
-        return book
-        // })
-        // reject('failed to process book')
-    // })
+        else {
+            sectionPages = 0
+            for(let i = 0; i < section.length; i += 1000) {
+                let stop = Math.min(i+1000, section.length)
+                await cacheSection(cacheDir, pages+sectionPages, section.slice(i, stop))
+                sectionPages += 1
+            }
+            pages += sectionPages
+        }
+    }
+    book.totalPages = pages
+    return book
 }
 
 const parseCoverInfo = (section) => {
@@ -41,7 +40,6 @@ const parseCoverInfo = (section) => {
     let authorFirstname = section.match('<first-name>(.*)<\/first-name>')[1] 
     let authorLastname = section.match('<last-name>(.*)<\/last-name>')[1]
     book.author = authorFirstname + ' ' + authorLastname
-    console.log('book', book)
     return book
 }
 

@@ -35,7 +35,6 @@ const booksSlice = createSlice({
       booksAdapter.addOne(state, {...action.payload, currentPage: 0, id:nanoid()})
     },
     updateBook(state, action) {
-      console.log('udpatebook', action)
       booksAdapter.updateOne(state, action.payload)
     },
   }

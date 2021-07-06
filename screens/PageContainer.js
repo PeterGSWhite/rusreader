@@ -5,7 +5,7 @@ import {
     updateBook,
     selectBookById,
 } from '../redux/booksSlice'
-
+import GestureRecognizer, {swipeDirections} from 'react-native-swipe-gestures';
 import RNFetchBlob from 'rn-fetch-blob'
 const dirs = RNFetchBlob.fs.dirs
 const PageContainer = ({route}) => {
@@ -24,12 +24,35 @@ const PageContainer = ({route}) => {
              setPageContent(data)
             })
     }
+
+    const onSwipeLeft = (gestureState) => {
+        dispatch(updateBook({
+            id: route.params.id,
+            changes: {
+                currentPage: Math.min(book.currentPage + 1, book.totalPages)
+            }
+        }))
+    }
+    const onSwipeRight = (gestureState) => {
+        console.log('right')
+        dispatch(updateBook({
+            id: route.params.id, 
+            changes: {
+                currentPage: Math.max(book.currentPage - 1, 0)
+            }
+        }))
+    }
+
+
     useEffect(() => readchunkfoo(book.cacheDir, book.currentPage), [book.currentPage,])
     return (
-        <View>
-            <Button onPress={() => {dispatch(updateBook({id: route.params.id, changes: {currentPage: book.currentPage + 1}}))}} title="oi" ></Button>
+        <GestureRecognizer
+            onSwipeLeft={(state) => onSwipeLeft(state)}
+            onSwipeRight={(state) => onSwipeRight(state)}
+        >
             <Text>{pageContent}</Text>
-        </View>
+        </GestureRecognizer>  
+            
     )
 }
 
