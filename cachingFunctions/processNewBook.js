@@ -1,3 +1,6 @@
+import matchAll from 'string.prototype.matchall';
+// matchAll.shim()
+
 import { View, StyleSheet, Text, Dimensions  } from "react-native";
 
 
@@ -5,6 +8,18 @@ import store from '../redux/store'
 
 import RNFetchBlob from 'rn-fetch-blob'
 const dirs = RNFetchBlob.fs.dirs
+
+import SQlite from 'react-native-sqlite-storage'
+
+const db = SQlite.openDatabase(
+    {
+        name: 'russiandb',
+        location: '../db/russian.db'
+    },
+    () => {},
+    error => { console.log(error) }
+);
+
 const processNewBook = async (cacheDir, uri) => {
     const settings = store.getState().settings
     //     fontSize: 22,
@@ -20,13 +35,17 @@ const processNewBook = async (cacheDir, uri) => {
     const windowHeight = Dimensions.get('window').height;
 
     const linewidth = windowWidth - settings.pageMarginHorizontal
-    const linesPerPage = Math.floor( (windowHeight - settings.pageMarginVertical) / (fontSize + settings.lineSpacing) )
+    const linesPerPage = Math.floor( (windowHeight - settings.pageMarginVertical) / (settings.fontSize + settings.lineSpacing) )
 
     let result
 
-    const ext = uri.split('.')[-1]
-    if(ext === 'fb2') {
-        result = parseFb2(uri) // result =  {coverInfo:{}, chapterList: [], sections:[]}
+    const ext = uri.split('.')
+    console.log('outside', ext[ext.length - 1])
+    if(ext[ext.length - 1] === 'fb2') {
+        
+        console.log('inside')
+        result = await parseFb2(uri) // result =  {coverInfo:{}, chapterList: [], sections:[]}
+        console.log('result', result)
     }
 
     let currentPages = 0
@@ -56,10 +75,11 @@ function* lineGenerator(section, index, linewidth, fontWidth, wordSpacing) {
 }
 
 // FB2 Parse Functions
-const parseFb2 = (uri) => {
+const parseFb2 = async (uri) => {
     let data = await RNFetchBlob.fs.readFile(uri, "text/xml")
     let sections = data.split("<section>")
-
+    
+    console.log('preee')
     // coverimage b64 comes with last section when split on opening tag
     let last = sections.pop()
     let breakLast = last.split('</section>')
@@ -71,16 +91,17 @@ const parseFb2 = (uri) => {
     let chapterList = []
     let processedSections = []
     sections.slice(1,).forEach(section => {
+        
         // Parse out title from each section and build up a chapter list
-        let chapterTitle = section.match(/<title>\s+<p>(.*?)<\/p>\s+<\/title>/)[1]
+        //let chapterTitle = section.match(/<title>\s+<p>(.*?)<\/p>\s+<\/title>/)[1]
+        let chapterTitle = 'one thing at a time'
         chapterList.push([chapterTitle, -1])
 
         // replace all non-html tags with html
         section = fb2XmlToHtml(section)
-
+        
         // check each word against db, replace the entries which exist
-        section = wrapVerbs(sections)
-
+        section = wrapVerbs(section)
         processedSections.push(section)
     })
     return {
@@ -118,23 +139,75 @@ const fb2XmlToHtml = (section) => {
     return section
 
 }
-const wrapVerbs = (section) => {
-    let words = section.split(' ')
-    words.forEach((word) => {
-        // Not working yet - (?:\s|[\e202F\e00A0>(\[«"'])([аАбБвВгГдДеЕёЁжЖзЗиИйЙкКлЛмМнНоОпПрРсСтТуУфФхХцЦчЧшШщЩъЪыЫьЬэЭюЮяЯ]*)(?=\s|[\e202F\e00A0<)\]»"',.:;-])
-    })
+const wrapVerbs = async (section) => {
+    let wordRe = new RegExp(`(?:\\s|[\\e202F\\e00A0>…(\\[«"'])([аАбБвВгГдДеЕёЁжЖзЗиИйЙкКлЛмМнНоОпПрРсСтТуУфФхХцЦчЧшШщЩъЪыЫьЬэЭюЮяЯ]*)(?=\\s|[\\e202F\\e00A0<)\\]»…"',.:;\\!\\?-])`, 'gm')
+    let words = []
+    let matches = matchAll(section, wordRe)
+    
+    for(let match of matches ) {
+        let word = match[1].toLowerCase()
+        if(word) {
+            words.push(word)
+        }
+    }
+    // Not working yet - (?:\s|[\e202F\e00A0>(\[«"'])([аАбБвВгГдДеЕёЁжЖзЗиИйЙкКлЛмМнНоОпПрРсСтТуУфФхХцЦчЧшШщЩъЪыЫьЬэЭюЮяЯ]*)(?=\s|[\e202F\e00A0<)\]»"',.:;-])
+    aspect_map = await wordsLookup(words) // This is a map of word -> aspect_id for the words which where in the db
+    console.log('aspect map workeD!', aspect_map)
+    for(verb in aspect_map) {
+        aspect_id = aspect_map[verb]
+        let className = ''
+        if(aspect_id == 1) {
+            className = 'nsv'
+        } else if(aspect_id == 2) {
+            className = 'sv'
+        } else if(aspect_id == 3) {
+            className = 'ns-ud'
+        } else if(aspect_id == 4) {
+            className = 'ns-md'
+        }
+        replacement = `<span class="${className}">${verb}</span>`
+        let re = new RegExp(`(?:whitespace)(${verb})(?:whitespace)`, 'gi');
+        section.replace(re,  `<span class="${className}">$1</span>`)
+    }
+    return section
 }
+
+const wordsLookup = async (words) => {
+    console.log(db)
+    // This function is easy to inject with - would be a big no-no if there was sensitive data
+    // The db only contains wikipedia data on Russian verbs so *shrugs*
+    aspect_map = {}
+    words = words.join(', ')
+    console.log('words', typeof words, words.length)
+    await db.transaction((tx) => {
+        tx.executeSql(
+            "SELECT word, aspect_id FROM verbal_aspects WHERE word = 'шел'",
+            [],
+            (tx, results) => {  
+                console.log('results', results)
+                results.rows.forEach((item) => {
+                    aspect_map[item.word] = item.aspect_id
+                })
+            }
+        )
+    })
+    console.log('why must i suffer', aspect_map)
+    return aspect_map
+}
+
 const parseFb2CoverInfo = (section) => {
+    return {author: 'J K ROWLING', title: 'filisiopfia jamen'}
     let book = {}
-    book.title = section.match('<book-title>(.*)</book-title>')[1] 
-    let authorFirstname = section.match('<first-name>(.*)<\/first-name>')[1] 
-    let authorLastname = section.match('<last-name>(.*)<\/last-name>')[1]
+    book.title = section.match(/<book-title>(.*)<\/book-title>/)[1] 
+    let authorFirstname = section.match(/<first-name>(.*)<\/first-name>/)[1] 
+    let authorLastname = section.match(/<last-name>(.*)<\/last-name>/)[1]
     book.author = authorFirstname + ' ' + authorLastname
     return book
 }
 
 const parseFb2CoverImage = (section) => {
-    let match = section.match('/<binary .*? content-type="(.*?)">((?:.|\s)*?)<\/binary>/')
+    return {imageFormat: 'image/jpeg', imageb64: 'im a fuck'}
+    let match = section.match(/<binary .*? content-type="(.*?)">((?:.|\s)*?)<\/binary>/)
     return {imageFormat: match[1], imageb64: match[2]}
 }
 
