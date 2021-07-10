@@ -2,23 +2,12 @@ import matchAll from 'string.prototype.matchall';
 // matchAll.shim()
 
 import { View, StyleSheet, Text, Dimensions  } from "react-native";
-
+import verb_aspect_map from './verbal_aspect_map'
 
 import store from '../redux/store'
 
 import RNFetchBlob from 'rn-fetch-blob'
 const dirs = RNFetchBlob.fs.dirs
-
-import SQlite from 'react-native-sqlite-storage'
-
-const db = SQlite.openDatabase(
-    {
-        name: 'russiandb',
-        location: '../db/russian.db'
-    },
-    () => {},
-    error => { console.log(error) }
-);
 
 const processNewBook = async (cacheDir, uri) => {
     const settings = store.getState().settings
@@ -40,10 +29,7 @@ const processNewBook = async (cacheDir, uri) => {
     let result
 
     const ext = uri.split('.')
-    console.log('outside', ext[ext.length - 1])
     if(ext[ext.length - 1] === 'fb2') {
-        
-        console.log('inside')
         result = await parseFb2(uri) // result =  {coverInfo:{}, chapterList: [], sections:[]}
         console.log('result', result)
     }
@@ -79,7 +65,6 @@ const parseFb2 = async (uri) => {
     let data = await RNFetchBlob.fs.readFile(uri, "text/xml")
     let sections = data.split("<section>")
     
-    console.log('preee')
     // coverimage b64 comes with last section when split on opening tag
     let last = sections.pop()
     let breakLast = last.split('</section>')
@@ -90,20 +75,19 @@ const parseFb2 = async (uri) => {
     coverInfo = {...coverInfo, ...imageInfo}
     let chapterList = []
     let processedSections = []
-    sections.slice(1,).forEach(section => {
-        
+    for(section of sections.slice(1,)) {
         // Parse out title from each section and build up a chapter list
-        //let chapterTitle = section.match(/<title>\s+<p>(.*?)<\/p>\s+<\/title>/)[1]
-        let chapterTitle = 'one thing at a time'
+        let chapterTitle = section.match(/<p>(.*?)<\/p>\s+<\/title>/gm)[1]
         chapterList.push([chapterTitle, -1])
-
+        
         // replace all non-html tags with html
         section = fb2XmlToHtml(section)
         
         // check each word against db, replace the entries which exist
-        section = wrapVerbs(section)
-        processedSections.push(section)
-    })
+        section = await wrapVerbs(section)
+        
+        processedSections.push(section.slice(0,200))
+    }
     return {
         coverInfo: coverInfo,
         chapterList: chapterList,
@@ -117,24 +101,24 @@ const fb2XmlToHtml = (section) => {
     // title (contains any number of p and empty-line), annotation, poem, cite, epigraph.
     
     // Replace Section Titles
-    section = section.replace(/<title>\s+<p>(.*?)<\/p>\s+<\/title>/, '<h1>$1</h1>')
+    section = section.replace(/<title>\s+<p>(.*?)<\/p>\s+<p>(.*?)<\/p>\s+<\/title>/gm, '<h1>$1</h1><h1>$2</h1>')
 
     // Poems
     section = section.replace('<poem>', '<div class="poem">')
     section = section.replace('</poem>', '</div>')
     section = section.replace('<stanza>', '')
     section = section.replace('</stanza>', '')
-    section = section.replace(/<v>(.*?)<\/v>/, '<p>$1</p>')
+    section = section.replace(/<v>(.*?)<\/v>/gm, '<p>$1</p>')
 
     // Cite
     section = section.replace('<cite>', '<div class="cite">')
     section = section.replace('</cite>', '</div>')
 
     // subtitle
-    section = section.replace(/<subtitle>(.*?)<\/subtitle>/, '<p>$1</p>')
+    section = section.replace(/<subtitle>(.*?)<\/subtitle>/gm, '<p>$1</p>')
 
     // empty-line
-    section = section.replace('<empty-line/>', '<p></p>')
+    section = section.replace(`empty-line`, 'br')
 
     return section
 
@@ -142,19 +126,18 @@ const fb2XmlToHtml = (section) => {
 const wrapVerbs = async (section) => {
     let wordRe = new RegExp(`(?:\\s|[\\e202F\\e00A0>…(\\[«"'])([аАбБвВгГдДеЕёЁжЖзЗиИйЙкКлЛмМнНоОпПрРсСтТуУфФхХцЦчЧшШщЩъЪыЫьЬэЭюЮяЯ]*)(?=\\s|[\\e202F\\e00A0<)\\]»…"',.:;\\!\\?-])`, 'gm')
     let words = []
-    let matches = matchAll(section, wordRe)
-    
+    let matches =  matchAll(section, wordRe)
+    let uniques = new Set()
     for(let match of matches ) {
         let word = match[1].toLowerCase()
-        if(word) {
+        if(word && word in verb_aspect_map && !(word in uniques)) {
             words.push(word)
+            uniques.add(word)
         }
     }
-    // Not working yet - (?:\s|[\e202F\e00A0>(\[«"'])([аАбБвВгГдДеЕёЁжЖзЗиИйЙкКлЛмМнНоОпПрРсСтТуУфФхХцЦчЧшШщЩъЪыЫьЬэЭюЮяЯ]*)(?=\s|[\e202F\e00A0<)\]»"',.:;-])
-    aspect_map = await wordsLookup(words) // This is a map of word -> aspect_id for the words which where in the db
-    console.log('aspect map workeD!', aspect_map)
-    for(verb in aspect_map) {
-        aspect_id = aspect_map[verb]
+    console.log(words.length)
+    words.forEach((word) => {
+        aspect_id = verb_aspect_map[word]
         let className = ''
         if(aspect_id == 1) {
             className = 'nsv'
@@ -165,75 +148,22 @@ const wrapVerbs = async (section) => {
         } else if(aspect_id == 4) {
             className = 'ns-md'
         }
-        replacement = `<span class="${className}">${verb}</span>`
-        let re = new RegExp(`(?:whitespace)(${verb})(?:whitespace)`, 'gi');
-        section.replace(re,  `<span class="${className}">$1</span>`)
-    }
+        let re = new RegExp(`(?:\\s|[\\e202F\\e00A0>…(\\[«"'])(${word})(?=\\s|[\\e202F\\e00A0<)\\]»…"',.:;\\!\\?-])`, 'gi');
+        section = section.replace(re,  `<span class="${className}">$1</span>`)
+    })
     return section
 }
 
-const wordsLookup = async (words) => {
-    console.log(db)
-    // This function is easy to inject with - would be a big no-no if there was sensitive data
-    // The db only contains wikipedia data on Russian verbs so *shrugs*
-    aspect_map = {}
-    words = words.join(', ')
-    console.log('words', typeof words, words.length)
-    await db.transaction((tx) => {
-        tx.executeSql(
-            "SELECT word, aspect_id FROM verbal_aspects WHERE word = 'шел'",
-            [],
-            (tx, results) => {  
-                console.log('results', results)
-                results.rows.forEach((item) => {
-                    aspect_map[item.word] = item.aspect_id
-                })
-            }
-        )
-    })
-    console.log('why must i suffer', aspect_map)
-    return aspect_map
-}
-
 const parseFb2CoverInfo = (section) => {
-    return {author: 'J K ROWLING', title: 'filisiopfia jamen'}
-    let book = {}
-    book.title = section.match(/<book-title>(.*)<\/book-title>/)[1] 
-    let authorFirstname = section.match(/<first-name>(.*)<\/first-name>/)[1] 
-    let authorLastname = section.match(/<last-name>(.*)<\/last-name>/)[1]
-    book.author = authorFirstname + ' ' + authorLastname
-    return book
+    let title = section.match(/<book-title>(.*)<\/book-title>/gm)[1] 
+    let authorFirstname = section.match(/<first-name>(.*)<\/first-name>/gm)[1] 
+    let authorLastname = section.match(/<last-name>(.*)<\/last-name>/gm)[1]
+    return {title: title, author: authorFirstname + ' ' + authorLastname}
 }
 
 const parseFb2CoverImage = (section) => {
-    return {imageFormat: 'image/jpeg', imageb64: 'im a fuck'}
-    let match = section.match(/<binary .*? content-type="(.*?)">((?:.|\s)*?)<\/binary>/)
+    let match = section.match(/<binary .*? content-type="(.*?)">((?:.|\s)*?)<\/binary>/gm)
     return {imageFormat: match[1], imageb64: match[2]}
 }
 
 export default processNewBook
-
-// let pages = 0
-//     let book
-//     // Get Cover info
-
-//     // Chunk it up
-//     let data = await RNFetchBlob.fs.readFile(uri, "text/xml")
-//     let sections = data.split("<section")
-//     for ( const [i, section] of sections.entries()) {
-//         if(i == 0) {
-//             console.log(section)
-//             book = parseCoverInfo(section)
-//         }
-//         else {
-//             sectionPages = 0
-//             for(let i = 0; i < section.length; i += 1000) {
-//                 let stop = Math.min(i+1000, section.length)
-//                 await cacheSection(cacheDir, pages+sectionPages, section.slice(i, stop))
-//                 sectionPages += 1
-//             }
-//             pages += sectionPages
-//         }
-//     }
-//     book.totalPages = pages
-//     return book
