@@ -7,9 +7,10 @@ import verb_aspect_map from './verbal_aspect_map'
 import store from '../redux/store'
 
 import RNFetchBlob from 'rn-fetch-blob'
+import { nanoid } from '@reduxjs/toolkit';
 const dirs = RNFetchBlob.fs.dirs
 
-const processNewBook = async (cacheDir, uri) => {
+const processNewBook = async (uri) => {
     const settings = store.getState().settings
     //     fontSize: 22,
     //     fontWidth: 11.97,
@@ -33,26 +34,37 @@ const processNewBook = async (cacheDir, uri) => {
         result = await parseFb2(uri) // result =  {coverInfo:{}, chapterList: [], sections:[]}
         console.log('result', result)
     }
-
+    
+    let cacheDir = nanoid()
     let currentPages = 0
     result.sections.forEach((section, sectionIndex) => {
         // need result.chapterList[sectionIndex][1] = currentPages
-        let sectionPages = 0
-
+        //let sectionPages = 0
+        cacheSection(cacheDir, currentPages, section)
+        currentPages += 1
         // Logic for pagination
 
         // currentPages += sectionPages
 
         
     })
-    result.totalPages = currentPages
+    //result.totalPages = currentPages
     
-    
-    
+    result = {...result, 
+        ...{
+            cacheDir: cacheDir,
+            totalPages: 123,
+            title: 'a',
+            author: 'b'
+        }
+    }
+    return result
 }
 
 const cacheSection = async (cacheDir, page, section) => {
     let chunk_path = dirs.CacheDir  + '/' +  cacheDir + '_' + page + '.txt'
+    console.log('writing to', chunk_path)
+    console.log('write data', section.slice(0,20))
     await RNFetchBlob.fs.writeFile(chunk_path, section, 'utf8')
 }
 
@@ -75,7 +87,7 @@ const parseFb2 = async (uri) => {
     coverInfo = {...coverInfo, ...imageInfo}
     let chapterList = []
     let processedSections = []
-    for(section of sections.slice(1,)) {
+    for(section of sections.slice(2,)) {
         // Parse out title from each section and build up a chapter list
         let chapterTitle = section.match(/<p>(.*?)<\/p>\s+<\/title>/gm)[1]
         chapterList.push([chapterTitle, -1])
@@ -87,6 +99,7 @@ const parseFb2 = async (uri) => {
         section = await wrapVerbs(section)
         
         processedSections.push(section.slice(0,200))
+        break
     }
     return {
         coverInfo: coverInfo,
@@ -99,7 +112,9 @@ const fb2XmlToHtml = (section) => {
     // An empty-line element that has no content is used to insert one line of vertical space. 
     // A few more complex containers are built from these basic elements: 
     // title (contains any number of p and empty-line), annotation, poem, cite, epigraph.
-    
+    let sentenceRe = new RegExp(`([аАбБвВгГдДеЕёЁжЖзЗиИйЙкКлЛмМнНоОпПрРсСтТуУфФхХцЦчЧшШщЩъЪыЫьЬэЭюЮяЯ \\e202F\\e00A0]*?)(?=[<)\\]»…"'.;\\!\\?])`, 'gm')
+    section = section.replace(sentenceRe, `<span onClick="window.ReactNativeWebView.postMessage('speak/' + this.textContent)">$1</span>`)
+    console.log('fucked it', section)
     // Replace Section Titles
     section = section.replace(/<title>\s+<p>(.*?)<\/p>\s+<p>(.*?)<\/p>\s+<\/title>/gm, '<h1>$1</h1><h1>$2</h1>')
 
@@ -149,7 +164,7 @@ const wrapVerbs = async (section) => {
             className = 'ns-md'
         }
         let re = new RegExp(`(?:\\s|[\\e202F\\e00A0>…(\\[«"'])(${word})(?=\\s|[\\e202F\\e00A0<)\\]»…"',.:;\\!\\?-])`, 'gi');
-        section = section.replace(re,  `<span class="${className}">$1</span>`)
+        section = section.replace(re,  `<span class="${className}" onClick="toggleHighlight(event, this); return false;">$1</span>`)
     })
     return section
 }

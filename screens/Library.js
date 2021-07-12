@@ -18,14 +18,6 @@ const Library = ({navigation}) => {
   const [loadingBook, setLoadingBook] = useState(false)
 
   const openBookFile = async () => {
-    dispatch(addBook({
-      cacheDir: 1,
-      title: 'title',
-      author: 'mr',
-      totalPages:123,
-      // coverArt
-    })) 
-    return
     setLoadingBook(true)
     try {
       const res = await DocumentPicker.pick({
@@ -37,11 +29,10 @@ const Library = ({navigation}) => {
         res.name,
         res.size
       );
-      let id = nanoid()
-      let book = await processNewBook(id, res.uri)
+      let book = await processNewBook(res.uri)
       console.log('booky wooky', book)
       dispatch(addBook({
-        cacheDir: id,
+        cacheDir: book.cacheDir,
         title: book.title,
         author: book.author,
         totalPages:book.totalPages,

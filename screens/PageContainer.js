@@ -20,10 +20,11 @@ const PageContainer = ({route}) => {
     const [pageContent, setPageContent] = useState('empty')
 
     const readchunkfoo = (cacheDir, page) => {
-        console.log('readingchunkfoo', cacheDir, page)
         let chunk_path = dirs.CacheDir + '/' + cacheDir + '_' + page + '.txt'
+        console.log('reading from', chunk_path)
         RNFetchBlob.fs.readFile(chunk_path, 'utf8')
            .then((data) => {
+            console.log('read data', data.slice(0,20))
              setPageContent(data)
             })
     }
@@ -47,16 +48,17 @@ const PageContainer = ({route}) => {
     }
 
 
-    // useEffect(() => readchunkfoo(book.cacheDir, book.currentPage), [book.currentPage,])
+    useEffect(() => readchunkfoo(book.cacheDir, book.currentPage), [book.currentPage,])
     return (
         <GestureRecognizer
             onSwipeLeft={(state) => onSwipeLeft(state)}
             onSwipeRight={(state) => onSwipeRight(state)}
             style= {{flex: 1}}
         >   
-            <PageContent
+        <Text>{pageContent}</Text>
+            {/* <PageContent
                 pageContent = {pageContent}
-            />
+            /> */}
         </GestureRecognizer>  
             
     )
