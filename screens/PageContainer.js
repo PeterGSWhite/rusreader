@@ -47,7 +47,7 @@ const PageContainer = ({route}) => {
     }
 
 
-    useEffect(() => readchunkfoo(book.cacheDir, book.currentPage), [book.currentPage,])
+    // useEffect(() => readchunkfoo(book.cacheDir, book.currentPage), [book.currentPage,])
     return (
         <GestureRecognizer
             onSwipeLeft={(state) => onSwipeLeft(state)}

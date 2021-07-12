@@ -1,10 +1,25 @@
 import React from 'react';
 import { WebView } from 'react-native-webview';
 import { useSelector } from 'react-redux' 
+import Tts from 'react-native-tts';
+import { BackHandler } from 'react-native';
+Tts.setDefaultLanguage('ru_RU');
 
 const PageContent = ({pageContent}) => {
     
     const settings = useSelector(state => state.settings)
+
+    const handleWebviewEvent = (event) => {
+        let parts = event.nativeEvent.data.split('/')
+        if(parts[0] === 'speak') { 
+            speakSentence(parts[1]);
+        }
+    }
+
+    const speakSentence = (sentence) => {
+        Tts.stop()
+        Tts.speak(sentence);
+      }
 
     const styles = `<style>
         p {
@@ -19,15 +34,40 @@ const PageContent = ({pageContent}) => {
             margin-bottom: ${settings.pageMarginVertical}px;
             word-break: break-all;
         }
+        .red {
+            background-color: red;
+        }
+        .highlighted {
+            background-color: transparent;
+        }
     </style>`
+    let pageContent2 = `<p onClick="window.ReactNativeWebView.postMessage('speak/' + this.textContent)">сука <span class="red" onClick="toggleHighlight(event, this); return false;">блять</span> твою</p><br/><p>мать</p>`
+    const html = `<html>
+    <head>${styles}</head>
+    <body>
+      <script>
+        function toggleHighlight(event, element) {
+            event.stopPropagation();
+          element.classList.toggle('highlighted');
+        }
+      </script>
+      <div class="page-container">${pageContent2}</div>
+    </body>
+    </html>`
 
-    const html = `<html><head>${styles}</head><body><div class="page-container">${pageContent}</div></body></html>`
+    const runFirst = `
+    true; // note: this is required, or you'll sometimes get silent failures
+    `;
 
     return (
         <WebView
           originWhitelist={['*']}
           source={{ html: html }} 
           scalesPageToFit={false}
+          onMessage={(event) => {
+            handleWebviewEvent(event)
+          }}
+          injectedJavaScript={runFirst}
         />
     );
 }

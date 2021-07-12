@@ -18,6 +18,14 @@ const Library = ({navigation}) => {
   const [loadingBook, setLoadingBook] = useState(false)
 
   const openBookFile = async () => {
+    dispatch(addBook({
+      cacheDir: 1,
+      title: 'title',
+      author: 'mr',
+      totalPages:123,
+      // coverArt
+    })) 
+    return
     setLoadingBook(true)
     try {
       const res = await DocumentPicker.pick({
