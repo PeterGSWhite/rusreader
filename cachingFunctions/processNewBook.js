@@ -89,7 +89,7 @@ const parseFb2 = async (uri) => {
     let processedSections = []
     for(section of sections.slice(2,)) {
         // Parse out title from each section and build up a chapter list
-        let chapterTitle = section.match(/<p>(.*?)<\/p>\s+<\/title>/gm)[1]
+        let chapterTitle = section.match(/<p>(.+?)<\/p>\s+<\/title>/m)[1]
         chapterList.push([chapterTitle, -1])
         
         // replace all non-html tags with html
@@ -164,8 +164,8 @@ const wrapVerbs = async (section) => {
         } else if(aspect_id == 4) {
             className = 'ns-md'
         }
-        let re = new RegExp(`(?:\\s|[\\e202F\\e00A0>…(\\[«"'])(${word})(?=\\s|[\\e202F\\e00A0<)\\]»…"',.:;\\!\\?-])`, 'gi');
-        section = section.replace(re,  `<span class="${className}" onClick="toggleHighlight(event, this); return false;">$1</span>`)
+        let re = new RegExp(`(\\s|[\\e202F\\e00A0>…(\\[«"'])(${word})(?=\\s|[\\e202F\\e00A0<)\\]»…"',.:;\\!\\?-])`, 'gi');
+        section = section.replace(re,  `$1<span class="${className}" onClick="toggleHighlight(event, this); return false;">$2</span>`)
     })
     return section
 }
