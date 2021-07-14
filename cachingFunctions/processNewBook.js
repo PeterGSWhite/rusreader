@@ -97,8 +97,7 @@ const parseFb2 = async (uri) => {
         
         // check each word against db, replace the entries which exist
         section = await wrapVerbs(section)
-        
-        processedSections.push(section.slice(0,200))
+        processedSections.push(section)
         break
     }
     return {
@@ -112,29 +111,31 @@ const fb2XmlToHtml = (section) => {
     // An empty-line element that has no content is used to insert one line of vertical space. 
     // A few more complex containers are built from these basic elements: 
     // title (contains any number of p and empty-line), annotation, poem, cite, epigraph.
-    let sentenceRe = new RegExp(`([аАбБвВгГдДеЕёЁжЖзЗиИйЙкКлЛмМнНоОпПрРсСтТуУфФхХцЦчЧшШщЩъЪыЫьЬэЭюЮяЯ \\e202F\\e00A0]*?)(?=[<)\\]»…"'.;\\!\\?])`, 'gm')
+    let sentenceRe = new RegExp(`([аАбБвВгГдДеЕёЁжЖзЗиИйЙкКлЛмМнНоОпПрРсСтТуУфФхХцЦчЧшШщЩъЪыЫьЬэЭюЮяЯ][аАбБвВгГдДеЕёЁжЖзЗиИйЙкКлЛмМнНоОпПрРсСтТуУфФхХцЦчЧшШщЩъЪыЫьЬэЭюЮяЯ,\\- \\\\p{Z}]+?)(?![аАбБвВгГдДеЕёЁжЖзЗиИйЙкКлЛмМнНоОпПрРсСтТуУфФхХцЦчЧшШщЩъЪыЫьЬэЭюЮяЯ, \\-\\\\p{Z}])`, 'gm')
     section = section.replace(sentenceRe, `<span onClick="window.ReactNativeWebView.postMessage('speak/' + this.textContent)">$1</span>`)
-    console.log('fucked it', section)
+    
     // Replace Section Titles
-    section = section.replace(/<title>\s+<p>(.*?)<\/p>\s+<p>(.*?)<\/p>\s+<\/title>/gm, '<h1>$1</h1><h1>$2</h1>')
-
+    let titleRe = new RegExp(`<title>(.*?)<\/title>`, 'gms')
+    section = section.replace(titleRe, '<h1>$1</h1>')
     // Poems
     section = section.replace('<poem>', '<div class="poem">')
     section = section.replace('</poem>', '</div>')
+    
     section = section.replace('<stanza>', '')
     section = section.replace('</stanza>', '')
     section = section.replace(/<v>(.*?)<\/v>/gm, '<p>$1</p>')
 
+
     // Cite
     section = section.replace('<cite>', '<div class="cite">')
     section = section.replace('</cite>', '</div>')
-
+    
     // subtitle
     section = section.replace(/<subtitle>(.*?)<\/subtitle>/gm, '<p>$1</p>')
 
     // empty-line
     section = section.replace(`empty-line`, 'br')
-
+    
     return section
 
 }

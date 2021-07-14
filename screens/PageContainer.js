@@ -24,7 +24,6 @@ const PageContainer = ({route}) => {
         console.log('reading from', chunk_path)
         RNFetchBlob.fs.readFile(chunk_path, 'utf8')
            .then((data) => {
-            console.log('read data', data.slice(0,20))
              setPageContent(data)
             })
     }
@@ -55,10 +54,9 @@ const PageContainer = ({route}) => {
             onSwipeRight={(state) => onSwipeRight(state)}
             style= {{flex: 1}}
         >   
-        <Text>{pageContent}</Text>
-            {/* <PageContent
+            <PageContent
                 pageContent = {pageContent}
-            /> */}
+            />
         </GestureRecognizer>  
             
     )

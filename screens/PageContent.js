@@ -2,14 +2,12 @@ import React, {useEffect} from 'react';
 import { WebView } from 'react-native-webview';
 import { useSelector } from 'react-redux' 
 import Tts from 'react-native-tts';
-import { BackHandler } from 'react-native';
+import { BackHandler, Text } from 'react-native';
 Tts.setDefaultLanguage('ru_RU');
 
 const PageContent = ({pageContent}) => {
     
     const settings = useSelector(state => state.settings)
-
-    useEffect(() => console.log('page content ccc', pageContent) , [pageContent,])
 
     const handleWebviewEvent = (event) => {
         let parts = event.nativeEvent.data.split('/')
