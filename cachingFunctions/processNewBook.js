@@ -164,7 +164,7 @@ const wrapVerbs = async (section) => {
         } else if(aspect_id == 4) {
             className = 'nsv-md'
         }
-        let re = new RegExp(`(\\s|[\\e202F\\e00A0>…(\\[«"'])(${word})(?=\\s|[\\e202F\\e00A0<)\\]»…"',.:;\\!\\?-])`, 'gi');
+        let re = new RegExp(`(\\s|t\\)">|[\\e202F\\e00A0…(\\[«"'])(${word})(?=\\s|[\\e202F\\e00A0<)\\]»…"',.:;\\!\\?-])`, 'gmi');
         section = section.replace(re,  `$1<span class="${className}" onClick="toggleHighlight(event, this); return false;">$2</span>`)
     })
     return section
