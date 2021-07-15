@@ -160,9 +160,9 @@ const wrapVerbs = async (section) => {
         } else if(aspect_id == 2) {
             className = 'sv'
         } else if(aspect_id == 3) {
-            className = 'ns-ud'
+            className = 'nsv-ud'
         } else if(aspect_id == 4) {
-            className = 'ns-md'
+            className = 'nsv-md'
         }
         let re = new RegExp(`(\\s|[\\e202F\\e00A0>…(\\[«"'])(${word})(?=\\s|[\\e202F\\e00A0<)\\]»…"',.:;\\!\\?-])`, 'gi');
         section = section.replace(re,  `$1<span class="${className}" onClick="toggleHighlight(event, this); return false;">$2</span>`)
