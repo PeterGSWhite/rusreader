@@ -6,8 +6,8 @@ export const settingsSlice = createSlice({
       fontSize: 22,
       fontWidth: 13.20,
       wordSpacing: -5,
-      pageMarginHorizontal: 10,
-      pageMarginVertical: 10,
+      pageMarginHorizontal: 0,
+      pageMarginVertical: 0,
       lineSpacing: 0,
     },
     reducers: {

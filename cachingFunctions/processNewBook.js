@@ -14,12 +14,14 @@ const processNewBook = async (uri) => {
     const settings = store.getState().settings
     
 
-    const windowWidth = Dimensions.get('window').width;
+    const windowWidth = 572.2 //Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
 
     const linewidth = windowWidth - 2*settings.pageMarginHorizontal
     const linesPerPage = Math.floor( (windowHeight - 2*settings.pageMarginVertical) / (settings.fontSize + settings.lineSpacing) )
-
+    console.log('lines per page', linesPerPage)
+    console.log('lineWidth', linewidth)
+    console.log('font width', settings.fontWidth, 'space width', settings.fontWidth + settings.wordSpacing)
     let result
 
     const ext = uri.split('.')
@@ -90,7 +92,9 @@ const paginateSection = async (
         let i = -1
         for(let c of section) {
             i += 1
-            current_page.push(c)
+            if(c != '\n' && c != '\r') {
+                current_page.push(c)
+            }
             if(c == '/') {
                 if(tag_reading) {
                     open_tags.push(open_tag_name_chars.join(''))
@@ -117,7 +121,7 @@ const paginateSection = async (
                 else if(closing_tag_reading) {
                     open_tags.pop()
                     tag = closing_tag_name_chars.join('')
-                    if(tag in ['p', 'h1']) {
+                    if(tag == 'p' || tag == 'h1') {
                         line_no += 1
                         current_line_width = 0
                     }
@@ -135,16 +139,23 @@ const paginateSection = async (
                 }
                 // Else it's not within a tag
                 else {
-                    if(c != ' ') {
+                    if(c != ' ' && c != '\n' && c != '\r') {
+                        if(pages.length == 0 && line_no < 10) {
+                            console.log('c', c, typeof c, 'addingss', fontWidth, 'to', current_line_width)
+                        }
                         current_line_width += fontWidth
                     }
-                    else {
+                    else if(current_line_width > 0) {
                         current_line_width += spaceWidth
                     }
                 }
             }
             if(current_line_width > linewidth - fontWidth) {
-                line_no += 1
+                if(pages.length == 0) {
+                    console.log(current_line_width, linewidth - fontWidth)
+                }
+                line_no += 1 
+                current_page.push('X')
                 current_line_width = 0    
             }
             if(line_no > linesPerPage) {
@@ -283,14 +294,19 @@ const wrapVerbs = async (section) => {
 }
 
 const parseFb2CoverInfo = (section) => {
-    let title = section.match(/<book-title>(.*)<\/book-title>/gm)[1] 
-    let authorFirstname = section.match(/<first-name>(.*)<\/first-name>/gm)[1] 
-    let authorLastname = section.match(/<last-name>(.*)<\/last-name>/gm)[1]
+    let titleRe = new RegExp(`<book-title>([a-zA-z0-9 -,.!?"':&%\u0401\u0451\u0410-\u044f]*?)<\/book-title>`, 'gm')
+    let title = matchAll(section, titleRe)[0]
+    let authorRe = new RegExp(`<first-name>([a-zA-z0-9 -,.!?"':&%\u0401\u0451\u0410-\u044f]*?)<\/first-name>\n\s+<last-name>([a-zA-z0-9 -,.!?"':&%\u0401\u0451\u0410-\u044f]*?)<\/last-name>`, 'gm')
+    let authorMatch = matchAll(section, authorRe) 
+    console.log('authormatch', authorMatch)
+    let authorFirstname = authorMatch[1]
+    let authorLastname = authorMatch[2]
     return {title: title, author: authorFirstname + ' ' + authorLastname}
 }
 
 const parseFb2CoverImage = (section) => {
-    let match = section.match(/<binary .*? content-type="(.*?)">((?:.|\s)*?)<\/binary>/gm)
+    let imageRe = new RegExp(`<binary .*? content-type="(.*?)">((?:.|\s)*?)<\/binary>`, 'gm')
+    let match = matchAll(section, imageRe)
     return {imageFormat: match[1], imageb64: match[2]}
 }
 
