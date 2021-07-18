@@ -2,12 +2,21 @@ import React, { useState } from 'react';
 import { StyleSheet, StatusBar, SafeAreaView, TextInput, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
 
-const TestWebView = ({fontSize, wordSpacing, setFontWidth, width, spacewidth}) => {
-
-    const quickBrownFox = `<html><head><style>p {font-size: ${fontSize}; word-spacing: ${wordSpacing} }</style></head>
+const TestWebView = ({fontSize, wordSpacing, setFontWidth, width}) => {
+    
+    const quickBrownFox = `
+    <html>
+      <head>
+        <style type="text/css">   
+          @font-face {
+            font-family: 'Droid Sans Mono';
+            src: url('file:///android_asset/fonts/DroidSansMono.ttf');
+          }
+        </style>
+        <style>p {font-size: ${fontSize}; font-family: "Droid Sans Mono"; word-spacing: ${wordSpacing} }</style>
+      </head>
     <body>
     <p>rendered char  width: ${width}</p>
-    <p>zero-space width: ${spacewidth}</p>
     <p>The Quick Brown Fox Jumps Over The Lazy Dog.</p>
     <p>Съешь Же Ещё Этих Мягких Французских Булок Да Выпей Чаю.</p>
     <p>0123456789!"№;%:?*()_+=-£$&,.'~</p>

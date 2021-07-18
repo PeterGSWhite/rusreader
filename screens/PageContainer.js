@@ -25,6 +25,7 @@ const PageContainer = ({route}) => {
         RNFetchBlob.fs.readFile(chunk_path, 'utf8')
            .then((data) => {
              setPageContent(data)
+             console.log(data)
             })
     }
 

@@ -30,11 +30,10 @@ const Library = ({navigation}) => {
         res.size
       );
       let book = await processNewBook(res.uri)
-      console.log('booky wooky', book)
       dispatch(addBook({
         cacheDir: book.cacheDir,
-        title: book.title,
-        author: book.author,
+        title: book.coverInfo.title,
+        author: book.coverInfo.author,
         totalPages:book.totalPages,
         // coverArt
       })) 

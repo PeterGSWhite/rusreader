@@ -12,53 +12,166 @@ const dirs = RNFetchBlob.fs.dirs
 
 const processNewBook = async (uri) => {
     const settings = store.getState().settings
-    //     fontSize: 22,
-    //     fontWidth: 11.97,
-    //     wordSpacing: 0,
-    //     realWordSpacing: 5.46,
-    //     pageMarginHorizontal: 10,
-    //     pageMarginVertical: 10,
-    //     lineSpacing: 0,
-    //   },
+    
 
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
 
-    const linewidth = windowWidth - settings.pageMarginHorizontal
-    const linesPerPage = Math.floor( (windowHeight - settings.pageMarginVertical) / (settings.fontSize + settings.lineSpacing) )
+    const linewidth = windowWidth - 2*settings.pageMarginHorizontal
+    const linesPerPage = Math.floor( (windowHeight - 2*settings.pageMarginVertical) / (settings.fontSize + settings.lineSpacing) )
 
     let result
 
     const ext = uri.split('.')
     if(ext[ext.length - 1] === 'fb2') {
         result = await parseFb2(uri) // result =  {coverInfo:{}, chapterList: [], sections:[]}
-        console.log('result', result)
     }
     
     let cacheDir = nanoid()
     let currentPages = 0
-    result.sections.forEach((section, sectionIndex) => {
-        // need result.chapterList[sectionIndex][1] = currentPages
-        //let sectionPages = 0
-        cacheSection(cacheDir, currentPages, section)
-        currentPages += 1
-        // Logic for pagination
-
+    let sectionIndex = 0
+    
+    for(let section of result.sections) {
+        result.chapterList[sectionIndex][0] = currentPages
+        let pagesInSection = await paginateSection(
+            section,
+            currentPages,
+            linesPerPage,
+            linewidth,
+            settings.fontWidth,
+            settings.wordSpacing,
+            cacheDir
+        )
+        currentPages += pagesInSection
+        result.chapterList[sectionIndex][1] = currentPages - 1
+        sectionIndex += 1
         // currentPages += sectionPages
-
+        //     fontSize: 22,
+        //     fontWidth: 11.97,
+        //     wordSpacing: 0,
+        //     realWordSpacing: 5.46,
+        //     pageMarginHorizontal: 10,
+        //     pageMarginVertical: 10,
+        //     lineSpacing: 0,
+        //   },
         
-    })
+    }
     //result.totalPages = currentPages
     
     result = {...result, 
         ...{
             cacheDir: cacheDir,
-            totalPages: 123,
-            title: 'a',
-            author: 'b'
+            totalPages: currentPages
         }
     }
     return result
+}
+
+const paginateSection = async (
+        section,
+        currentPages,
+        linesPerPage,
+        linewidth,
+        fontWidth,
+        wordSpacing,
+        cacheDir
+    ) => {
+        let line_no = 0
+        let current_line_width = 0
+
+        let pages = []
+        let spaceWidth = fontWidth + wordSpacing
+        let tag_reading = false
+        let closing_tag_reading = false
+        let open_tags = []
+        let open_tag_name_chars = []
+        let closing_tag_name_chars = []
+        let current_page = []
+        let i = -1
+        for(let c of section) {
+            i += 1
+            current_page.push(c)
+            if(c == '/') {
+                if(tag_reading) {
+                    open_tags.push(open_tag_name_chars.join(''))
+                    open_tag_name_chars = []
+                    tag_reading = false
+                }
+                continue
+            }
+            else if(c == '<') {
+                if(section[i+1] == '/') {
+                    closing_tag_reading = true
+                }
+                else {
+                    tag_reading = true
+                }       
+            }
+            else if(c == '>') {
+                if(tag_reading) {
+                    open_tags.push(open_tag_name_chars.join(''))
+                    open_tag_name_chars = []
+                    
+                    tag_reading = false
+                }
+                else if(closing_tag_reading) {
+                    open_tags.pop()
+                    tag = closing_tag_name_chars.join('')
+                    if(tag in ['p', 'h1']) {
+                        line_no += 1
+                        current_line_width = 0
+                    }
+                    closing_tag_name_chars = []
+                    closing_tag_reading = false
+                }       
+            }
+            // Else, not <, > or \>
+            else {
+                if(tag_reading) {
+                    open_tag_name_chars.push(c)
+                }
+                else if(closing_tag_reading) {
+                    closing_tag_name_chars.push(c)
+                }
+                // Else it's not within a tag
+                else {
+                    if(c != ' ') {
+                        current_line_width += fontWidth
+                    }
+                    else {
+                        current_line_width += spaceWidth
+                    }
+                }
+            }
+            if(current_line_width > linewidth - fontWidth) {
+                line_no += 1
+                current_line_width = 0    
+            }
+            if(line_no > linesPerPage) {
+                open_tags.slice().reverse().forEach((tag) => {
+                    if(tag && tag != ' ') {
+                        current_page.push('</' + tag.split(' ')[0] + '>')
+                    }
+                })
+                pages.push(current_page.join(''))
+                current_page = []
+                open_tags.forEach((tag) => {
+                    if(tag && tag != ' ') {
+                        current_page.push('<' + tag + '>')
+                    }
+                })   
+                line_no = 0
+
+            }
+        }
+        for(let page of pages) {
+            console.log('caching page', currentPages)
+            await cacheSection(cacheDir, currentPages, page)
+            console.log('cached page', currentPages)
+            currentPages += 1
+        }
+        console.log('POST CACHE')
+        return pages.length
 }
 
 const cacheSection = async (cacheDir, page, section) => {
@@ -87,10 +200,10 @@ const parseFb2 = async (uri) => {
     coverInfo = {...coverInfo, ...imageInfo}
     let chapterList = []
     let processedSections = []
-    for(section of sections.slice(2,)) {
+    for(section of sections.slice(2,3)) {
         // Parse out title from each section and build up a chapter list
         let chapterTitle = section.match(/<p>(.+?)<\/p>\s+<\/title>/m)[1]
-        chapterList.push([chapterTitle, -1])
+        chapterList.push([chapterTitle, -1, -1])
         
         // replace all non-html tags with html
         section = fb2XmlToHtml(section)
@@ -98,7 +211,6 @@ const parseFb2 = async (uri) => {
         // check each word against db, replace the entries which exist
         section = await wrapVerbs(section)
         processedSections.push(section)
-        break
     }
     return {
         coverInfo: coverInfo,
@@ -112,7 +224,7 @@ const fb2XmlToHtml = (section) => {
     // A few more complex containers are built from these basic elements: 
     // title (contains any number of p and empty-line), annotation, poem, cite, epigraph.
     let sentenceRe = new RegExp(`([аАбБвВгГдДеЕёЁжЖзЗиИйЙкКлЛмМнНоОпПрРсСтТуУфФхХцЦчЧшШщЩъЪыЫьЬэЭюЮяЯ][аАбБвВгГдДеЕёЁжЖзЗиИйЙкКлЛмМнНоОпПрРсСтТуУфФхХцЦчЧшШщЩъЪыЫьЬэЭюЮяЯ,\\- \\\\p{Z}]+?)(?![аАбБвВгГдДеЕёЁжЖзЗиИйЙкКлЛмМнНоОпПрРсСтТуУфФхХцЦчЧшШщЩъЪыЫьЬэЭюЮяЯ, \\-\\\\p{Z}])`, 'gm')
-    section = section.replace(sentenceRe, `<span onClick="window.ReactNativeWebView.postMessage('speak/' + this.textContent)">$1</span>`)
+    section = section.replace(sentenceRe, `<span onClick="window.ReactNativeWebView.postMessage('speak££' + this.textContent)">$1</span>`)
     
     // Replace Section Titles
     let titleRe = new RegExp(`<title>(.*?)<\/title>`, 'gms')

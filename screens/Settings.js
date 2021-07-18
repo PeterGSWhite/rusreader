@@ -7,12 +7,11 @@ const Settings = ({navigation}) => {
     const dispatch = useDispatch()
     const settings = useSelector(state => state.settings)
 
-    const setFontWidth = ({fontWidth, spaceWidth}) => {
+    const setFontWidth = ({fontWidth}) => {
         dispatch({
             type: 'settings/edit',
             payload: {
-                fontWidth: fontWidth,
-                realWordSpacing: spaceWidth
+                fontWidth: fontWidth
             }
         })
     }
@@ -66,7 +65,6 @@ const Settings = ({navigation}) => {
             wordSpacing={settings.wordSpacing}
             setFontWidth={setFontWidth}
             width={settings.fontWidth}
-            spacewidth={settings.realWordSpacing}
         />
 
     </View>

@@ -4,9 +4,8 @@ export const settingsSlice = createSlice({
     name: 'settings',
     initialState: {
       fontSize: 22,
-      fontWidth: 11.97,
-      wordSpacing: 0,
-      realWordSpacing: 5.46,
+      fontWidth: 13.20,
+      wordSpacing: -5,
       pageMarginHorizontal: 10,
       pageMarginVertical: 10,
       lineSpacing: 0,

@@ -10,7 +10,7 @@ const PageContent = ({pageContent}) => {
     const settings = useSelector(state => state.settings)
 
     const handleWebviewEvent = (event) => {
-        let parts = event.nativeEvent.data.split('/')
+        let parts = event.nativeEvent.data.split('££')
         if(parts[0] === 'speak') { 
             speakSentence(parts[1]);
         }
@@ -21,7 +21,14 @@ const PageContent = ({pageContent}) => {
         Tts.speak(sentence);
       }
 
-    const styles = `<style>
+    const styles = `
+    <style type="text/css">   
+          @font-face {
+            font-family: 'Droid Sans Mono';
+            src: url('file:///android_asset/fonts/DroidSansMono.ttf');
+          }
+    </style>
+    <style>
         p {
             font-size: ${settings.fontSize}px;
             word-spacing: ${settings.wordSpacing}px;
@@ -48,6 +55,9 @@ const PageContent = ({pageContent}) => {
         }
         .highlighted {
             background-color: transparent;
+        }
+        .page-container {
+            font-family: "Droid Sans Mono"
         }
     </style>`
     
