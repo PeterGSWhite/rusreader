@@ -7,14 +7,11 @@ import {
   addBook,
   selectAllBooks
 } from '../redux/booksSlice'
-import { nanoid } from '@reduxjs/toolkit'
-import { DrawerContentScrollView } from '@react-navigation/drawer';
 import processNewBook from '../cachingFunctions/processNewBook'
 
 const Library = ({navigation}) => {
   const dispatch = useDispatch()
   const books = useSelector(selectAllBooks)
-  console.log('boooooks', books)
   const [loadingBook, setLoadingBook] = useState(false)
 
   const openBookFile = async () => {
@@ -30,11 +27,13 @@ const Library = ({navigation}) => {
         res.size
       );
       let book = await processNewBook(res.uri)
+      console.log('chap list in libr', book.chapterList)
       dispatch(addBook({
         cacheDir: book.cacheDir,
         title: book.coverInfo.title,
         author: book.coverInfo.author,
         totalPages:book.totalPages,
+        chapterList:book.chapterList
         // coverArt
       })) 
       // Instantiate new book here and redirect

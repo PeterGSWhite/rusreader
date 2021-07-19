@@ -9,6 +9,7 @@ export const settingsSlice = createSlice({
       pageMarginHorizontal: 0,
       pageMarginVertical: 0,
       lineSpacing: 0,
+      currentBookId: 'iii'
     },
     reducers: {
       edit: (state, action) => {

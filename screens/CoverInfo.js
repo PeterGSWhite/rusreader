@@ -1,9 +1,9 @@
 import React from "react";
 import { View, Text, Image, TouchableOpacity } from "react-native";
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
 
 const CoverInfo = ({navigation, book}) => {
-  console.log('coverinfo', book)
+  const dispatch = useDispatch()
   return (
     <TouchableOpacity
       style={{
@@ -14,8 +14,16 @@ const CoverInfo = ({navigation, book}) => {
         marginHorizontal: 20,
         backgroundColor: 'grey'
       }}
-      onPress={() =>
-        navigation.navigate('PageContainer', book.item)
+      onPress={() => {
+        console.log('WOW COVER ID ITS HERE WOW', book.item.id, 'end')
+          dispatch({
+            type: 'settings/edit',
+            payload: {
+              currentBookId: book.item.id
+            }
+          })
+          navigation.navigate('PageContainer', book.item)
+        }
       }
     >
       <View style={{ flex: 0.3 }} >

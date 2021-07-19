@@ -17,11 +17,8 @@ const processNewBook = async (uri) => {
     const windowWidth = 572.2 //Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
 
-    const linewidth = windowWidth - 2*settings.pageMarginHorizontal
+    const linewidth = windowWidth - 2*settings.pageMarginHorizontal + settings.fontWidth
     const linesPerPage = Math.floor( (windowHeight - 2*settings.pageMarginVertical) / (settings.fontSize + settings.lineSpacing) )
-    console.log('lines per page', linesPerPage)
-    console.log('lineWidth', linewidth)
-    console.log('font width', settings.fontWidth, 'space width', settings.fontWidth + settings.wordSpacing)
     let result
 
     const ext = uri.split('.')
@@ -34,7 +31,7 @@ const processNewBook = async (uri) => {
     let sectionIndex = 0
     
     for(let section of result.sections) {
-        result.chapterList[sectionIndex][0] = currentPages
+        result.chapterList[sectionIndex].from = currentPages
         let pagesInSection = await paginateSection(
             section,
             currentPages,
@@ -45,7 +42,7 @@ const processNewBook = async (uri) => {
             cacheDir
         )
         currentPages += pagesInSection
-        result.chapterList[sectionIndex][1] = currentPages - 1
+        result.chapterList[sectionIndex].to = currentPages - 1
         sectionIndex += 1
         // currentPages += sectionPages
         //     fontSize: 22,
@@ -140,9 +137,6 @@ const paginateSection = async (
                 // Else it's not within a tag
                 else {
                     if(c != ' ' && c != '\n' && c != '\r') {
-                        if(pages.length == 0 && line_no < 10) {
-                            console.log('c', c, typeof c, 'addingss', fontWidth, 'to', current_line_width)
-                        }
                         current_line_width += fontWidth
                     }
                     else if(current_line_width > 0) {
@@ -151,11 +145,7 @@ const paginateSection = async (
                 }
             }
             if(current_line_width > linewidth - fontWidth) {
-                if(pages.length == 0) {
-                    console.log(current_line_width, linewidth - fontWidth)
-                }
                 line_no += 1 
-                current_page.push('X')
                 current_line_width = 0    
             }
             if(line_no > linesPerPage) {
@@ -175,20 +165,18 @@ const paginateSection = async (
 
             }
         }
+        if(current_page.length > 1) {
+            pages.push(current_page.join(''))
+        }
         for(let page of pages) {
-            console.log('caching page', currentPages)
             await cacheSection(cacheDir, currentPages, page)
-            console.log('cached page', currentPages)
             currentPages += 1
         }
-        console.log('POST CACHE')
         return pages.length
 }
 
 const cacheSection = async (cacheDir, page, section) => {
     let chunk_path = dirs.CacheDir  + '/' +  cacheDir + '_' + page + '.txt'
-    console.log('writing to', chunk_path)
-    console.log('write data', section.slice(0,20))
     await RNFetchBlob.fs.writeFile(chunk_path, section, 'utf8')
 }
 
@@ -211,10 +199,14 @@ const parseFb2 = async (uri) => {
     coverInfo = {...coverInfo, ...imageInfo}
     let chapterList = []
     let processedSections = []
-    for(section of sections.slice(2,3)) {
+    for(section of sections.slice(2,4)) {
         // Parse out title from each section and build up a chapter list
         let chapterTitle = section.match(/<p>(.+?)<\/p>\s+<\/title>/m)[1]
-        chapterList.push([chapterTitle, -1, -1])
+        chapterList.push({
+            title: chapterTitle, 
+            from: -1,
+            to: -1
+        })
         
         // replace all non-html tags with html
         section = fb2XmlToHtml(section)
@@ -274,7 +266,7 @@ const wrapVerbs = async (section) => {
             uniques.add(word)
         }
     }
-    console.log(words.length)
+    
     words.forEach((word) => {
         aspect_id = verb_aspect_map[word]
         let className = ''
@@ -295,19 +287,22 @@ const wrapVerbs = async (section) => {
 
 const parseFb2CoverInfo = (section) => {
     let titleRe = new RegExp(`<book-title>([a-zA-z0-9 -,.!?"':&%\u0401\u0451\u0410-\u044f]*?)<\/book-title>`, 'gm')
-    let title = matchAll(section, titleRe)[0]
-    let authorRe = new RegExp(`<first-name>([a-zA-z0-9 -,.!?"':&%\u0401\u0451\u0410-\u044f]*?)<\/first-name>\n\s+<last-name>([a-zA-z0-9 -,.!?"':&%\u0401\u0451\u0410-\u044f]*?)<\/last-name>`, 'gm')
-    let authorMatch = matchAll(section, authorRe) 
-    console.log('authormatch', authorMatch)
-    let authorFirstname = authorMatch[1]
-    let authorLastname = authorMatch[2]
+    let title = section.match(titleRe)[0].replace(titleRe, '$1')
+    let firstnameRe = new RegExp(`<first-name>([a-zA-z0-9 -,.!?"':&%\u0401\u0451\u0410-\u044f]*?)<\/first-name>`, 'gm')
+    let authorFirstname = section.match(firstnameRe)[0].replace(firstnameRe, '$1')
+    let lastnameRe = new RegExp(`<last-name>([a-zA-z0-9 -,.!?"':&%\u0401\u0451\u0410-\u044f]*?)<\/last-name>`, 'gm')
+    let authorLastname = section.match(lastnameRe)[0].replace(lastnameRe, '$1')
+
     return {title: title, author: authorFirstname + ' ' + authorLastname}
 }
 
 const parseFb2CoverImage = (section) => {
-    let imageRe = new RegExp(`<binary .*? content-type="(.*?)">((?:.|\s)*?)<\/binary>`, 'gm')
-    let match = matchAll(section, imageRe)
-    return {imageFormat: match[1], imageb64: match[2]}
+    // console.log(section)
+    // let imageFormatRe = new RegExp(`content-type="(.*?)">`, 'gm')
+    // let imageB64Re = new RegExp(`>((?:.|[\n\s])*?)<\/binary>`, 'gm')
+    // let imageFormat = section.match(imageFormatRe)[0].replace(imageFormatRe, '$1')
+    // let imageb64 = section.match(imageB64Re)[0].replace(imageB64Re, '$1')
+    return {imageFormat: 'a', imageb64: 'b'}
 }
 
 export default processNewBook

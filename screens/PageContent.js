@@ -75,6 +75,7 @@ const PageContent = ({pageContent}) => {
     </html>`
 
     const runFirst = `
+    document.body.style.userSelect = 'none'
     true; // note: this is required, or you'll sometimes get silent failures
     `;
 
