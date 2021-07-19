@@ -53,7 +53,7 @@ const PageContainer = ({route}) => {
         <GestureRecognizer
             onSwipeLeft={(state) => onSwipeLeft(state)}
             onSwipeRight={(state) => onSwipeRight(state)}
-            style= {{flex: 1}}
+            style= {{marginLeft: 10, flex: 1}}
         >   
             <PageContent
                 pageContent = {pageContent}
