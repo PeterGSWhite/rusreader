@@ -10,9 +10,10 @@ import Chapters from './screens/Chapters';
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
+import { PersistGate } from 'redux-persist/integration/react'
 
-
-import store from './redux/store'
+import configureStore from './redux/store'
+const {store, persistor} = configureStore();
 
 const Drawer = createDrawerNavigator();
 
@@ -29,10 +30,12 @@ function MyDrawer() {
 
 export default function App() {
   return (
-    <Provider store={store}>
-      <NavigationContainer>
-        <MyDrawer />
-      </NavigationContainer>
+    <Provider store={store} persistor={persistor}>
+      <PersistGate loading={null} persistor={persistor}>
+        <NavigationContainer>
+          <MyDrawer />
+        </NavigationContainer>
+      </PersistGate>
     </Provider>
   );
 }
