@@ -180,9 +180,6 @@ const cacheSection = async (cacheDir, page, section) => {
     await RNFetchBlob.fs.writeFile(chunk_path, section, 'utf8')
 }
 
-function* lineGenerator(section, index, linewidth, fontWidth, wordSpacing) {
-    "Yield lines with hyphens on wordbreak"
-}
 
 // FB2 Parse Functions
 const parseFb2 = async (uri) => {
@@ -199,7 +196,7 @@ const parseFb2 = async (uri) => {
     coverInfo = {...coverInfo, ...imageInfo}
     let chapterList = []
     let processedSections = []
-    for(section of sections.slice(2,4)) {
+    for(section of sections.slice(1,)) {
         // Parse out title from each section and build up a chapter list
         let chapterTitle = section.match(/<p>(.+?)<\/p>\s+<\/title>/m)[1]
         chapterList.push({
@@ -280,7 +277,7 @@ const wrapVerbs = async (section) => {
             className = 'nsv-md'
         }
         let re = new RegExp(`(\\s|t\\)">|[\\e202F\\e00A0…(\\[«"'])(${word})(?=\\s|[\\e202F\\e00A0<)\\]»…"',.:;\\!\\?-])`, 'gmi');
-        section = section.replace(re,  `$1<span class="${className}" onClick="toggleHighlight(event, this); return false;">$2</span>`)
+        section = section.replace(re,  `$1<span class="${className} highlighted" onClick="toggleHighlight(event, this); return false;">$2</span>`)
     })
     return section
 }
