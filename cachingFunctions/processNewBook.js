@@ -198,7 +198,13 @@ const parseFb2 = async (uri) => {
     let processedSections = []
     for(section of sections.slice(1,)) {
         // Parse out title from each section and build up a chapter list
-        let chapterTitle = section.match(/<p>(.+?)<\/p>\s+<\/title>/m)[1]
+        let chapterTitle
+        try {
+            chapterTitle = section.match(/<p>(.+?)<\/p>\s*\n*?\s*?<\/title>/m)[1]
+        } catch {
+            continue
+        }
+        
         chapterList.push({
             title: chapterTitle, 
             from: -1,
@@ -283,11 +289,11 @@ const wrapVerbs = async (section) => {
 }
 
 const parseFb2CoverInfo = (section) => {
-    let titleRe = new RegExp(`<book-title>([a-zA-z0-9 -,.!?"':&%\u0401\u0451\u0410-\u044f]*?)<\/book-title>`, 'gm')
+    let titleRe = new RegExp(`<book-title>([a-zA-z0-9 \--,.!?"':&%\u0401\u0451\u0410-\u044f]*?)<\/book-title>`, 'gm')
     let title = section.match(titleRe)[0].replace(titleRe, '$1')
-    let firstnameRe = new RegExp(`<first-name>([a-zA-z0-9 -,.!?"':&%\u0401\u0451\u0410-\u044f]*?)<\/first-name>`, 'gm')
+    let firstnameRe = new RegExp(`<first-name>([a-zA-z0-9 \--,.!?"':&%\u0401\u0451\u0410-\u044f]*?)<\/first-name>`, 'gm')
     let authorFirstname = section.match(firstnameRe)[0].replace(firstnameRe, '$1')
-    let lastnameRe = new RegExp(`<last-name>([a-zA-z0-9 -,.!?"':&%\u0401\u0451\u0410-\u044f]*?)<\/last-name>`, 'gm')
+    let lastnameRe = new RegExp(`<last-name>([a-zA-z0-9 \--,.!?"':&%\u0401\u0451\u0410-\u044f]*?)<\/last-name>`, 'gm')
     let authorLastname = section.match(lastnameRe)[0].replace(lastnameRe, '$1')
 
     return {title: title, author: authorFirstname + ' ' + authorLastname}

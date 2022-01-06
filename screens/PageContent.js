@@ -17,8 +17,8 @@ const PageContent = ({pageContent}) => {
     }
 
     const speakSentence = (sentence) => {
-        Tts.stop()
-        Tts.speak(sentence);
+        // Tts.stop()
+        // Tts.speak(sentence);
       }
 
     const styles = `
